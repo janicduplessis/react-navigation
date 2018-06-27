@@ -17,13 +17,12 @@ import HeaderTitle from './HeaderTitle';
 import HeaderBackButton from './HeaderBackButton';
 import ModularHeaderBackButton from './ModularHeaderBackButton';
 import HeaderStyleInterpolator from './HeaderStyleInterpolator';
-import withOrientation from '../withOrientation';
+import withDimensions from '../withDimensions';
 
-const APPBAR_HEIGHT = Platform.OS === 'ios' ? 44 : 56;
-const STATUSBAR_HEIGHT = Platform.OS === 'ios' ? 20 : 0;
 const TITLE_OFFSET = Platform.OS === 'ios' ? 70 : 56;
 
-const getAppBarHeight = isLandscape => {
+// TODO: We sould probably allow customizing this.
+export const getAppBarHeight = isLandscape => {
   return Platform.OS === 'ios'
     ? isLandscape && !Platform.isPad
       ? 32
@@ -41,10 +40,6 @@ class Header extends React.PureComponent {
     titleInterpolator: HeaderStyleInterpolator.forCenter,
     rightInterpolator: HeaderStyleInterpolator.forRight,
   };
-
-  static get HEIGHT() {
-    return APPBAR_HEIGHT + STATUSBAR_HEIGHT;
-  }
 
   state = {
     widths: {},
@@ -429,7 +424,7 @@ class Header extends React.PureComponent {
 
   render() {
     let appBar;
-    const { mode, scene, isLandscape } = this.props;
+    const { mode, scene, isLandscape, safeAreaInsets } = this.props;
 
     if (mode === 'float') {
       const scenesByIndex = {};
@@ -464,6 +459,8 @@ class Header extends React.PureComponent {
       flexShrink,
       flexBasis,
       flexWrap,
+      paddingTop,
+      height,
       ...safeHeaderStyle
     } = headerStyleObj;
 
@@ -476,6 +473,8 @@ class Header extends React.PureComponent {
       warnIfHeaderStyleDefined(flexShrink, 'flexShrink');
       warnIfHeaderStyleDefined(flexBasis, 'flexBasis');
       warnIfHeaderStyleDefined(flexWrap, 'flexWrap');
+      warnIfHeaderStyleDefined(paddingTop, 'paddingTop');
+      warnIfHeaderStyleDefined(height, 'height');
     }
 
     // TODO: warn if any unsafe styles are provided
@@ -483,12 +482,12 @@ class Header extends React.PureComponent {
       options.headerTransparent
         ? styles.transparentContainer
         : styles.container,
-      { height: appBarHeight },
+      {
+        height: appBarHeight + safeAreaInsets.top,
+        paddingTop: safeAreaInsets.top,
+      },
       safeHeaderStyle,
     ];
-
-    const { headerForceInset } = options;
-    const forceInset = headerForceInset || { top: 'always', bottom: 'never' };
 
     return (
       <Animated.View
@@ -497,12 +496,12 @@ class Header extends React.PureComponent {
           { backgroundColor: DEFAULT_BACKGROUND_COLOR },
         ]}
       >
-        <SafeAreaView forceInset={forceInset} style={containerStyles}>
+        <View style={containerStyles}>
           <View style={StyleSheet.absoluteFill}>
             {options.headerBackground}
           </View>
           <View style={styles.flexOne}>{appBar}</View>
-        </SafeAreaView>
+        </View>
       </Animated.View>
     );
   }
@@ -606,4 +605,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default withOrientation(Header);
+export default withDimensions(Header);

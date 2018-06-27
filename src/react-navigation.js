@@ -163,7 +163,7 @@ module.exports = {
   get withNavigationFocus() {
     return require('./views/withNavigationFocus').default;
   },
-  get withOrientation() {
-    return require('./views/withOrientation').default;
+  get withDimensions() {
+    return require('./views/withDimensions').default;
   },
 };

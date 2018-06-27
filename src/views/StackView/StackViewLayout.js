@@ -13,24 +13,17 @@ import {
 } from 'react-native';
 
 import Card from './StackViewCard';
-import Header from '../Header/Header';
+import Header, { getAppBarHeight } from '../Header/Header';
 import NavigationActions from '../../NavigationActions';
 import StackActions from '../../routers/StackActions';
 import SceneView from '../SceneView';
-import withOrientation from '../withOrientation';
+import withDimensions from '../withDimensions';
 import { NavigationProvider } from '../NavigationContext';
 
 import TransitionConfigs from './StackViewTransitionConfigs';
 import { supportsImprovedSpringAnimation } from '../../utils/ReactNativeFeatures';
 
 const emptyFunction = () => {};
-
-const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get('window');
-const IS_IPHONE_X =
-  Platform.OS === 'ios' &&
-  !Platform.isPad &&
-  !Platform.isTVOS &&
-  (WINDOW_HEIGHT === 812 || WINDOW_WIDTH === 812);
 
 const EaseInOut = Easing.inOut(Easing.ease);
 
@@ -68,20 +61,6 @@ const animatedSubscribeValue = animatedValue => {
   }
 };
 
-const getDefaultHeaderHeight = isLandscape => {
-  if (Platform.OS === 'ios') {
-    if (isLandscape && !Platform.isPad) {
-      return 32;
-    } else if (IS_IPHONE_X) {
-      return 88;
-    } else {
-      return 64;
-    }
-  } else {
-    return 56;
-  }
-};
-
 class StackViewLayout extends React.Component {
   /**
    * Used to identify the starting point of the position when the gesture starts, such that it can
@@ -102,19 +81,6 @@ class StackViewLayout extends React.Component {
    * cases when the user quickly swipes back several times.
    */
   _immediateIndex = null;
-
-  constructor(props) {
-    super(props);
-
-    this.state = {
-      // Used when card's header is null and mode is float to make transition
-      // between screens with headers and those without headers smooth.
-      // This is not a great heuristic here. We don't know synchronously
-      // on mount what the header height is so we have just used the most
-      // common cases here.
-      floatingHeaderHeight: getDefaultHeaderHeight(props.isLandscape),
-    };
-  }
 
   _renderHeader(scene, headerMode) {
     const { options } = scene.descriptor;
@@ -416,21 +382,12 @@ class StackViewLayout extends React.Component {
     },
   });
 
-  _onFloatingHeaderLayout = e => {
-    this.setState({ floatingHeaderHeight: e.nativeEvent.layout.height });
-  };
-
   render() {
     let floatingHeader = null;
     const headerMode = this._getHeaderMode();
-
     if (headerMode === 'float') {
       const { scene } = this.props.transitionProps;
-      floatingHeader = (
-        <View pointerEvents="box-none" onLayout={this._onFloatingHeaderLayout}>
-          {this._renderHeader(scene, headerMode)}
-        </View>
-      );
+      floatingHeader = this._renderHeader(scene, headerMode);
     }
     const {
       transitionProps: { scene, scenes },
@@ -528,7 +485,6 @@ class StackViewLayout extends React.Component {
 
   _renderCard = scene => {
     const { screenInterpolator } = this._getTransitionConfig();
-
     const style =
       screenInterpolator &&
       screenInterpolator({ ...this.props.transitionProps, scene });
@@ -541,7 +497,9 @@ class StackViewLayout extends React.Component {
     const headerMode = this._getHeaderMode();
     let marginTop = 0;
     if (!hasHeader && headerMode === 'float') {
-      marginTop = -this.state.floatingHeaderHeight;
+      marginTop = -(
+        getAppBarHeight(this.props.isLandscape) + this.props.safeAreaInsets.top
+      );
     }
 
     return (
@@ -571,4 +529,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default withOrientation(StackViewLayout);
+export default withDimensions(StackViewLayout);

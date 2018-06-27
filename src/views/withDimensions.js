@@ -5,12 +5,14 @@ import hoistNonReactStatic from 'hoist-non-react-statics';
 export const isOrientationLandscape = ({ width, height }) => width > height;
 
 export default function(WrappedComponent) {
-  class withOrientation extends React.Component {
+  class DimensionsContainer extends React.Component {
     constructor() {
       super();
 
-      const isLandscape = isOrientationLandscape(Dimensions.get('window'));
-      this.state = { isLandscape };
+      const window = Dimensions.get('window');
+      const safeAreaInsets = Dimensions.get('safeAreaInsets');
+      const isLandscape = isOrientationLandscape(window);
+      this.state = { isLandscape, window, safeAreaInsets };
     }
 
     componentDidMount() {
@@ -21,9 +23,9 @@ export default function(WrappedComponent) {
       Dimensions.removeEventListener('change', this.handleOrientationChange);
     }
 
-    handleOrientationChange = ({ window }) => {
+    handleOrientationChange = ({ window, safeAreaInsets }) => {
       const isLandscape = isOrientationLandscape(window);
-      this.setState({ isLandscape });
+      this.setState({ isLandscape, window, safeAreaInsets });
     };
 
     render() {
@@ -31,5 +33,5 @@ export default function(WrappedComponent) {
     }
   }
 
-  return hoistNonReactStatic(withOrientation, WrappedComponent);
+  return hoistNonReactStatic(DimensionsContainer, WrappedComponent);
 }
